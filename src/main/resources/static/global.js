@@ -109,29 +109,41 @@ function projectOnClick(projectKey){
     });
 }
 
+function openCsv(){
+	window.csvContent = "data:text/csv;charset=utf-8,";
+	var row = [];
+    row.push("Creation Date");
+    row.push("Update Date");
+    row.push("Rule");
+    row.push("Status");
+    row.push("Severity");
+    row.push("File");
+    row.push("Line");
+    row.push("Message");
+    window.csvContent += toString(row);
+}
+
 function showIssues(responseIssues, projectKey, page) {
     var issues = responseIssues['issues'];
     var row = [];
+    var maxLength = 997737;
     if ( page == 1 ){
-    	window.csvContent = "data:text/csv;charset=utf-8,";
-	    row.push("Creation Date");
-	    row.push("Update Date");
-	    row.push("Rule");
-	    row.push("Status");
-	    row.push("Severity");
-	    row.push("File");
-	    row.push("Line");
-	    row.push("Message");
-	    window.csvContent += toString(row);
-    }else if ( issues.length == 0 ){
+    	openCsv();
+    }else if ( issues.length == 0 || window.csvContent.length >= maxLength ){
     	//no more data...
     	var encodedUri = encodeURI(window.csvContent);
     	var link = document.createElement("a");
     	link.setAttribute("href", encodedUri);
-    	link.setAttribute("download", projectKey + ".csv");
+    	link.setAttribute("download", projectKey + "-" + page + ".csv");
     	document.body.appendChild(link); // Required for FF
     	link.click(); // This will download the data file named "my_data.csv".
-	    return;
+    	
+    	if ( issues.length == 0 ){
+    		return;
+    	}else{
+    		//we have a very large file...
+        	openCsv();
+    	}
     }
     
     for(var k in issues) {
@@ -158,3 +170,6 @@ function showIssues(responseIssues, projectKey, page) {
 
 // cd src\main\resources\static
 // http-server
+
+//test:
+window.SonarRequest.getJSON('/api/projects/index' ).then(showProjects);
