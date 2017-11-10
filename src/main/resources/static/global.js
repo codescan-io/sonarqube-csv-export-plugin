@@ -25,7 +25,7 @@ window.registerExtension('csvexport/global', function (opts) {
             showProjects(response);
         }
     }).catch(function (error) {
-    	alert("An error occurred trying to read the projects");
+    	alert("An error occurred trying to read the projects" + getError(error));
     });;
 
     // return a function, which is called when the page is being closed
@@ -35,6 +35,12 @@ window.registerExtension('csvexport/global', function (opts) {
     };
 });
 
+function getError(error){
+	if ( typeof(error) == 'string' ){
+		return ": " + error;
+	}
+	return '';
+}
 function addElements(select, items){
 	for ( i in items ){
 		var item = items[i];
@@ -137,9 +143,11 @@ function showProjects(responseProjects) {
     //resolved
     var resolved = document.createElement('select');
     addElements(resolved, {
+    	'': 'All',
     	'false': 'Unresolved',
     	'true': 'Resolved',
     });
+    resolved.selectedIndex = 1;
     addConfig(configList, 'Is Resolved', 'resolved', resolved);
 
     //severities
@@ -245,7 +253,7 @@ function toString(row){
 }
 
 function projectOnClick(projectKey){
-	var options = {componentKeys: projectKey};
+	var options = {componentKeys: projectKey, p: 1, ps: 500};
 	
 	var els = document.getElementsByClassName('csv-options');
 	Array.prototype.forEach.call(els, function(el) {
@@ -270,11 +278,10 @@ function projectOnClick(projectKey){
 	
 	alert(JSON.stringify(options));
 	
-	window.SonarRequest.getJSON('/api/issues/search', options
-	).then(function (response) {
-        showIssues(response, projectKey, 1);
+	window.SonarRequest.getJSON('/api/issues/search', options).then(function (response) {
+        showIssues(response, options);
     }).catch(function (error) {
-    	alert("An error occurred trying to read the first page");
+    	alert("An error occurred trying to read the first page" + getError(error));
     });;
 }
 
@@ -292,18 +299,18 @@ function openCsv(){
     window.csvContent += toString(row);
 }
 
-function showIssues(responseIssues, projectKey, page) {
+function showIssues(responseIssues, options) {
     var issues = responseIssues['issues'];
     var row = [];
     //var maxLength = 997737;
-    if ( page == 1 ){
+    if ( options.p == 1 ){
     	openCsv();
     }else if ( issues.length == 0 ) { //}|| window.csvContent.length >= maxLength ){
     	//no more data...
     	var encodedUri = encodeURI(window.csvContent);
     	var link = document.createElement("a");
     	link.setAttribute("href", encodedUri);
-    	link.setAttribute("download", projectKey + "-" + page + ".csv");
+    	link.setAttribute("download", options.componentKeys + "-" + options.p + ".csv");
     	document.body.appendChild(link); // Required for FF
     	link.click(); // This will download the data file named "my_data.csv".
     	
@@ -330,12 +337,11 @@ function showIssues(responseIssues, projectKey, page) {
     }
     
 
-    window.SonarRequest.getJSON('/api/issues/search',
-            {componentKeys: projectKey, p: page+1}
-	).then(function (response) {
-        showIssues(response, projectKey, page+1);
+    options.p++;
+    window.SonarRequest.getJSON('/api/issues/search',options).then(function (response) {
+        showIssues(response, options);
     }).catch(function (error) {
-    	alert("An error occurred trying to read the next page");
+    	alert("An error occurred trying to read the next page. This can occur if there are too many results. Reduce your request to less than 10,000 results" + getError(error));
     });
 }
 
@@ -344,5 +350,5 @@ function showIssues(responseIssues, projectKey, page) {
 
 //test:
 //window.SonarRequest.getJSON('/api/projects/index' ).then(showProjects).catch(function (error) {
-//	alert("An error occurred trying to read the projects");
+//	alert("An error occurred trying to read the projects" + getError(error));
 //});
