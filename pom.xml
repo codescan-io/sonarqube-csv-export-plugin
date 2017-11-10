@@ -6,7 +6,7 @@
 
     <groupId>com.villagechief.sonarqube.csv</groupId>
     <artifactId>sonar-csv-export-plugin</artifactId>
-    <version>0.3.0</version>
+    <version>0.4.0</version>
     <name>Csv export plugin</name>
     <description>Historical version analysis and prediction adviser</description>
     <!-- this is important for sonar-packaging-maven-plugin -->
