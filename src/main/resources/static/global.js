@@ -24,7 +24,9 @@ window.registerExtension('csvexport/global', function (opts) {
         if (stillOpen) {
             showProjects(response);
         }
-    });
+    }).catch(function (error) {
+    	alert("An error occurred trying to read the projects");
+    });;
 
     // return a function, which is called when the page is being closed
     return function () {
@@ -33,16 +35,157 @@ window.registerExtension('csvexport/global', function (opts) {
     };
 });
 
+function addElements(select, items){
+	for ( i in items ){
+		var item = items[i];
+		var opt = document.createElement('option');
+		opt.setAttribute('name', i);
+		opt.textContent = item;
+		select.appendChild(opt);
+	}
+}
 
+function addConfig(configList, title, name, el){
+	var titleEl = document.createElement('span');
+	titleEl.textContent = title;
+	titleEl.setAttribute('class', 'csv-title');
+	configList.appendChild(titleEl);
+
+    el.setAttribute('name', name);
+    el.setAttribute('class', 'csv-options');
+    
+	configList.appendChild(el);
+	configList.appendChild(document.createElement('br'));
+}
+
+function addStyle(css){
+	var style = document.createElement('style');
+	style.type = 'text/css';
+	if (style.styleSheet){
+	  style.styleSheet.cssText = css;
+	} else {
+	  style.appendChild(document.createTextNode(css));
+	}
+	options.el.appendChild(style);
+}
 function showProjects(responseProjects) {
+	options.el.textContent = '';
+	
+	
+	addStyle(
+	"   .csv-projectList {\n" +
+	"       padding-left: 1em;\n" +
+	"       padding-top: 1em;\n" +
+	"	}\n" +
+	"	.csv-header {\n" +
+	"		padding-left: 1em;\n" +
+	"	}\n" +
+	"	.csv-title {\n" +
+	"		height: 2em;\n" +
+	"		padding-left: 2em;\n" +
+	"		width: 200px;\n" +
+	"		display: inline-block;\n" +
+	"		vertical-align: top;\n" +
+	"	}\n" +
+	"	.csv-options {\n" +
+	"		width: 200px;\n" +
+	"	}\n" +
+	"	.csv-options[multiple] {\n" +
+	"		height: 5em;\n" +
+	"		width: 200px;\n" +
+	"	}\n"
+	);
+	
     var myHeader = document.createElement('h1');
+    myHeader.setAttribute('class', 'csv-header');
     myHeader.textContent = 'All Projects';
     var myRegion = options.el;
     options.el.appendChild(myHeader);
+    
+    var configList = document.createElement('div');
+    options.el.appendChild(configList);
+    
+    //assignee...
+    var assignee = document.createElement('select');
+    addElements(assignee, {
+    	'': '-- select --',
+        '__me__': 'Me'
+    });
+    addConfig(configList, 'Assignee', 'assignee', assignee);
+    
+    //createdAfter
+    var createdAfter = document.createElement('input');
+    createdAfter.setAttribute('placeholder', '2017-10-19 or 2017-10-19T13:00:00+0200');
+    addConfig(configList, 'Created After', 'createdAfter', createdAfter);
+    
+    //createdBefore
+    var createdBefore = document.createElement('input');
+    createdBefore.setAttribute('placeholder', '2017-10-19 or 2017-10-19T13:00:00+0200');
+    addConfig(configList, 'Created Before', 'createdBefore', createdBefore);
+
+    //resolution
+    var resolutions = document.createElement('select');
+    resolutions.setAttribute('multiple', 'multiple');
+    addElements(resolutions, {
+    	'FALSE-POSITIVE': 'FALSE-POSITIVE',
+    	'WONTFIX': 'WONTFIX',
+    	'FIXED': 'FIXED',
+    	'REMOVED': 'REMOVED',
+    });
+    addConfig(configList, 'Resolution', 'resolutions', resolutions);
+
+    //resolved
+    var resolved = document.createElement('select');
+    addElements(resolved, {
+    	'false': 'Unresolved',
+    	'true': 'Resolved',
+    });
+    addConfig(configList, 'Is Resolved', 'resolved', resolved);
+
+    //severities
+    var severities = document.createElement('select');
+    severities.setAttribute('multiple', 'multiple');
+    addElements(severities, {
+    	'INFO': 'INFO',
+    	'MINOR': 'MINOR',
+    	'MAJOR': 'MAJOR',
+    	'CRITICAL': 'CRITICAL',
+    	'BLOCKER': 'BLOCKER',
+    });
+    addConfig(configList, 'Severities', 'severities', severities);
+
+
+    //statuses
+    var statuses = document.createElement('select');
+    statuses.setAttribute('multiple', 'multiple');
+    addElements(statuses, {
+    	'OPEN': 'OPEN',
+    	'CONFIRMED': 'CONFIRMED',
+    	'REOPENED': 'REOPENED',
+    	'RESOLVED': 'RESOLVED',
+    	'CLOSED': 'CLOSED',
+    });
+    addConfig(configList, 'Statuses', 'statuses', statuses);
+    
+    //tags
+    var tags = document.createElement('input');
+    tags.setAttribute('placeholder', 'e.g. security,convention');
+    addConfig(configList, 'Tags', 'tags', tags);
+
+    //types
+    var types = document.createElement('select');
+    types.setAttribute('multiple', 'multiple');
+    addElements(types, {
+    	'CODE_SMELL': 'CODE_SMELL',
+    	'BUG': 'BUG',
+    	'VULNERABILITY': 'VULNERABILITY',
+    });
+    addConfig(configList, 'Types', 'types', types);
 
     var projectList = document.createElement('ul');
+    projectList.setAttribute('class', 'csv-projectList');
     options.el.appendChild(projectList);
-
+    
     for(var k in responseProjects) {
         var projectKey = responseProjects[k].k;
         var projectName = responseProjects[k].nm;
@@ -102,11 +245,37 @@ function toString(row){
 }
 
 function projectOnClick(projectKey){
-	window.SonarRequest.getJSON('/api/issues/search',
-            {componentKeys: projectKey}
+	var options = {componentKeys: projectKey};
+	
+	var els = document.getElementsByClassName('csv-options');
+	Array.prototype.forEach.call(els, function(el) {
+		var val = '';
+		if ( el.tagName.toLowerCase() == 'select' ){
+			var selected = [];
+			for (var i = 0; i < el.length; i++) {
+		        if (el.options[i].selected) 
+		        	selected.push(el.options[i].getAttribute('name'));
+		    }
+			
+			val = selected.join(',');
+		}else if ( el.tagName.toLowerCase() == 'input' && el.type.toLowerCase() == 'text' ){
+			val = el.value;
+		}else{
+			console.error('Unhandled type: ' + el.tagName);
+		}
+		if ( typeof(val) == 'string' && val != '' ){
+			options[el.getAttribute('name')] = val;
+		};
+	});
+	
+	alert(JSON.stringify(options));
+	
+	window.SonarRequest.getJSON('/api/issues/search', options
 	).then(function (response) {
         showIssues(response, projectKey, 1);
-    });
+    }).catch(function (error) {
+    	alert("An error occurred trying to read the first page");
+    });;
 }
 
 function openCsv(){
@@ -126,10 +295,10 @@ function openCsv(){
 function showIssues(responseIssues, projectKey, page) {
     var issues = responseIssues['issues'];
     var row = [];
-    var maxLength = 997737;
+    //var maxLength = 997737;
     if ( page == 1 ){
     	openCsv();
-    }else if ( issues.length == 0 || window.csvContent.length >= maxLength ){
+    }else if ( issues.length == 0 ) { //}|| window.csvContent.length >= maxLength ){
     	//no more data...
     	var encodedUri = encodeURI(window.csvContent);
     	var link = document.createElement("a");
@@ -165,6 +334,8 @@ function showIssues(responseIssues, projectKey, page) {
             {componentKeys: projectKey, p: page+1}
 	).then(function (response) {
         showIssues(response, projectKey, page+1);
+    }).catch(function (error) {
+    	alert("An error occurred trying to read the next page");
     });
 }
 
@@ -172,4 +343,6 @@ function showIssues(responseIssues, projectKey, page) {
 // http-server
 
 //test:
-window.SonarRequest.getJSON('/api/projects/index' ).then(showProjects);
+//window.SonarRequest.getJSON('/api/projects/index' ).then(showProjects).catch(function (error) {
+//	alert("An error occurred trying to read the projects");
+//});
