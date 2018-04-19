@@ -276,8 +276,6 @@ function projectOnClick(projectKey){
 		};
 	});
 	
-	alert(JSON.stringify(options));
-	
 	window.SonarRequest.getJSON('/api/issues/search', options).then(function (response) {
         showIssues(response, options);
     }).catch(function (error) {
