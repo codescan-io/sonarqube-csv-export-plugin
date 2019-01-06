@@ -294,6 +294,9 @@ function openCsv(){
     row.push("File");
     row.push("Line");
     row.push("Message");
+    row.push("IssueType");
+    row.push("Language");
+    row.push("Repository");
     window.csvContent += toString(row);
 }
 
@@ -330,6 +333,9 @@ function showIssues(responseIssues, options) {
         row.push(issues[k].component);
         row.push(issues[k].line);
         row.push(issues[k].message);
+        row.push(issues[k].type);
+        row.push(issues[k].language);
+        row.push(issues[k].repository);
 
         window.csvContent += toString(row);
     }
