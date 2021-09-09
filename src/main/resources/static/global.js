@@ -19,10 +19,10 @@ window.registerExtension('csvexport/global', function (opts) {
     var stillOpen = true;
     options = opts;
 
-    window.SonarRequest.getJSON('/api/projects/index'
+	window.SonarRequest.getJSON("/api/components/search?qualifiers=TRK"
     ).then(function (response) {
         if (stillOpen) {
-            showProjects(response);
+            showProjects(response.components);
         }
     }).catch(function (error) {
     	alert("An error occurred trying to read the projects" + getError(error));
@@ -195,8 +195,8 @@ function showProjects(responseProjects) {
     options.el.appendChild(projectList);
     
     for(var k in responseProjects) {
-        var projectKey = responseProjects[k].k;
-        var projectName = responseProjects[k].nm;
+        var projectKey = responseProjects[k].key;
+        var projectName = responseProjects[k].name;
         var listItem = document.createElement('li');
         var itemLink = document.createElement('a');
         itemLink.setAttribute('href', "javascript: projectOnClick(" + JSON.stringify(projectKey) + ")");
