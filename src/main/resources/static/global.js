@@ -187,6 +187,7 @@ function showProjects(responseProjects) {
     	'CODE_SMELL': 'CODE_SMELL',
     	'BUG': 'BUG',
     	'VULNERABILITY': 'VULNERABILITY',
+	'SECURITY_HOTSPOT': 'SECURITY_HOTSPOT',
     });
     addConfig(configList, 'Types', 'types', types);
 
