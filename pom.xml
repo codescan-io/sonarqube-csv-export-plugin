@@ -13,7 +13,7 @@
     <packaging>sonar-plugin</packaging>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <sonar.apiVersion>6.3</sonar.apiVersion>
+        <sonar.apiVersion>7.5</sonar.apiVersion>
         <jdk.min.version>1.8</jdk.min.version>
     </properties>
 
